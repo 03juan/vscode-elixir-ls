@@ -162,69 +162,157 @@ Check the developer console by opening `Help > Toggle Developer Tools` and inclu
 
 ## Contributing
 
-### Installation
+This project consists of two main components that can be developed independently:
+
+1. **VS Code Extension** (TypeScript) - Client-side functionality, UI integration, and language client management
+2. **ElixirLS Language Server** (Elixir) - Core language features, LSP/DAP implementation
+
+### Extension Development Setup
+
+For developing the VS Code extension itself (TypeScript code, commands, UI features):
 
 ```shell
 # Clone this repo recursively to ensure you get the elixir-ls submodule
 git clone --recursive git@github.com:elixir-lsp/vscode-elixir-ls.git
 
-# Fetch vscode-elixir-ls dependencies
+# Install extension dependencies
 cd vscode-elixir-ls
 npm install
 
-# Fetch elixir-ls dependencies
+# Install ElixirLS dependencies (required for testing)
 cd elixir-ls
 mix deps.get
 MIX_ENV=prod mix compile
+cd ..
 ```
 
-To launch the extension from VS Code, run the "Launch Extension local" launch configuration from [Run and Debug view](https://code.visualstudio.com/docs/editor/debugging#_run-view) or press F5.
-
-Alternatively, you can build and install the extension locally using the `vsce` command and the `code` CLI.
+**Development workflow for extension changes:**
 
 ```shell
-# Navigate to vscode-elixir-ls project root
-cd ..
+# Watch TypeScript changes (recommended)
+npm run watch
 
-# Build the extension
+# Launch development extension (press F5 or use command below)
+# This opens a new VS Code window with your extension loaded
+code --extensionDevelopmentPath=.
+```
+
+**Testing extension changes:**
+
+```shell
+# Run extension tests
+npm test
+
+# On Linux (requires display server)
+xvfb-run -a npm test
+
+# Alternative test script
+./test.sh  # or test.bat on Windows
+```
+
+### ElixirLS Language Server Development
+
+For developing the language server itself (Elixir code, LSP features, diagnostics):
+
+**Important:** Set `ELS_LOCAL=1` to use your local ElixirLS source instead of the bundled release.
+
+```shell
+# Development mode - use local ElixirLS source
+export ELS_LOCAL=1
+
+# Launch extension with local ElixirLS
+code --extensionDevelopmentPath=. /path/to/test/elixir/project
+```
+
+**Development workflow for ElixirLS changes:**
+
+```shell
+# 1. Make changes to ElixirLS code in elixir-ls/apps/
+# 2. Compile changes
+cd elixir-ls
+MIX_ENV=prod mix compile
+
+# 3. Restart VS Code window to pick up changes
+# Or use "Developer: Reload Window" command
+```
+
+**Testing ElixirLS changes:**
+
+```shell
+cd elixir-ls
+
+# Run all ElixirLS tests
+mix test
+
+# Test specific app
+cd apps/language_server && mix test
+
+# Test specific file/line
+mix test test/language_server/providers/completion_test.exs:42
+```
+
+### Packaging and Distribution
+
+Build and install the extension locally:
+
+```shell
+# Build the extension package
 npx vsce package
 
-# Install it locally
+# Install locally
 code --install-extension *.vsix --force
 ```
 
-Note that if you have the extension installed from the Visual Studio Marketplace and are also installing a locally
-built package, you may need to disable the [Extensions: Auto Check Updates](https://code.visualstudio.com/docs/editor/extension-gallery#_extension-autoupdate) setting to prevent your
-local install from being replaced with the Marketplace version.
+**Note:** If you have the marketplace extension installed, you may need to disable [Extensions: Auto Check Updates](https://code.visualstudio.com/docs/editor/extension-gallery#_extension-autoupdate) to prevent your local version from being replaced.
 
-### `elixir-ls` submodule
+### Contributing to ElixirLS (Language Server)
 
-Most of the functionality of this extension comes from ElixirLS, which is included as a Git submodule in the `elixir-ls` folder. Make sure you clone the repo using `git clone --recursive` or run `git submodule init && git submodule update` after cloning.
+The ElixirLS language server is included as a Git submodule in the `elixir-ls` folder. This allows you to develop and test changes to both components simultaneously.
 
-Including `elixir-ls` as a submodule makes it easy to develop and test code changes for ElixirLS itself. If you want to modify ElixirLS, not just its VS Code client code, you'll want to change the code in the `elixir-ls` subdirectory. Most often you don't need to explicitly build it. The ElixirLS launch script should be able to pick up changes and rebuild accordingly via `Mix.install`.
+**When to contribute to ElixirLS:**
 
-When you're ready to contribute your changes back to ElixirLS, you need to fork the [ElixirLS](https://github.com/elixir-lsp/elixir-ls) repo on Github and push any changes you make to the ElixirLS submodule to your fork. Here is an example of how that might look:
+- Adding new language features (completion, diagnostics, formatting)
+- Fixing LSP/DAP protocol implementation
+- Improving performance or memory usage
+- Adding support for new Elixir/OTP versions
+
+**ElixirLS development workflow:**
 
 ```shell
-# Enter the submodule directory. Now, if you run git commands, they run in the submodule
+# Enter the submodule directory
 cd vscode-elixir-ls/elixir-ls
 
 # Create your feature branch
 git checkout -b my_new_branch
 
-# Add your forked elixir-ls repository as a remote
-git remote add my_fork git@github.com:<your_github_username>/elixir-ls.git
+# Make changes to language server code in apps/language_server/
+# or debug adapter code in apps/debug_adapter/
 
-# Make changes in the elixir-ls folder, commit them, and push to your forked repo
-git commit ...
-git push my_fork my_new_branch
-
-# Visit https://github.com/elixir-lsp/elixir-ls/compare to start a new Pull Request
+# Test your changes with local development mode
+cd ..
+export ELS_LOCAL=1
+code --extensionDevelopmentPath=. /path/to/test/project
 ```
 
-### Running the tests locally
+**Contributing ElixirLS changes back:**
 
-You should ensure that the tests run locally before submitting a PR, and if relevant add automated tests in the PR.
+```shell
+# Fork the ElixirLS repo and add as remote
+cd elixir-ls
+git remote add my_fork git@github.com:<your_github_username>/elixir-ls.git
+
+# Commit and push your changes
+git commit -m "Add new language feature"
+git push my_fork my_new_branch
+
+# Create PR at https://github.com/elixir-lsp/elixir-ls/compare
+```
+
+**Important:** ElixirLS changes should be contributed to the [ElixirLS repository](https://github.com/elixir-lsp/elixir-ls), while extension changes go to this repository.
+
+### Running Tests
+
+**Extension tests:**
 
 ```shell
 rm -rf out
@@ -232,7 +320,16 @@ npm run compile
 npm test
 ```
 
-Alternatively, you can use the `test.sh`/`test.bat` script which does the above.
+**ElixirLS tests:**
+
+```shell
+cd elixir-ls
+mix test
+
+# Test specific components
+cd apps/language_server && mix test
+cd apps/debug_adapter && mix test
+```
 
 ## Telemetry
 
