@@ -1,12 +1,48 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import * as vscode from "vscode";
-import { buildCommand } from "./executable";
+import { buildCommand } from ".  createDebugAdapterTracker(
+    session: vscode.DebugSession,
+  ): vscode.ProviderResult<vscode.DebugAdapterTracker> {
+    return {
+      onWillStartSession: async () => {
+        this.startTimes.set(session.id, performance.now());
+        
+        // Initialize dynamic interpretation coordination if enabled
+        const config = session.configuration;
+        if (config.coordination?.enabled) {
+          const coordinationManager = new DynamicInterpretationManager(
+            this.outputChannel,
+            session.workspaceFolder
+          );
+          
+          this.coordinationManagers.set(session.id, coordinationManager);
+          
+          try {
+            const languageClient = this.getLanguageClient(session.workspaceFolder);
+            if (languageClient) {
+              await coordinationManager.initialize(languageClient, session, config);
+              this.outputChannel.appendLine(`Dynamic interpretation coordination initialized for session ${session.id}`);
+            }
+          } catch (error) {
+            this.outputChannel.appendLine(`Failed to initialize coordination for session ${session.id}: ${error}`);
+          }
+        }
+      },
+      onWillStopSession: () => {
+        this.startTimes.delete(session.id);
+        const coordinationManager = this.coordinationManagers.get(session.id);
+        if (coordinationManager) {
+          coordinationManager.dispose?.();
+          this.coordinationManagers.delete(session.id);
+        }
+      },e";
 import {
   type TelemetryEvent,
   preprocessStacktrace,
   preprocessStacktraceInProperties,
   reporter,
 } from "./telemetry";
+import { DynamicInterpretationManager } from "./dynamicInterpretationManager";
 
 class DebugAdapterExecutableFactory
   implements vscode.DebugAdapterDescriptorFactory
@@ -97,13 +133,21 @@ class DebugAdapterTrackerFactory
 {
   private _context: vscode.ExtensionContext;
   private startTimes: Map<string, number> = new Map();
-  constructor(context: vscode.ExtensionContext) {
+  private coordinationManagers: Map<string, DynamicInterpretationManager> = new Map();
+  
+  constructor(
+    context: vscode.ExtensionContext,
+    private outputChannel: vscode.OutputChannel,
+    private getLanguageClient: (workspaceFolder?: vscode.WorkspaceFolder) => any
+  ) {
     this._context = context;
   }
 
   dispose() {
-    this._onExited.dispose();
-    this._onOutput.dispose();
+    for (const manager of this.coordinationManagers.values()) {
+      manager.dispose?.();
+    }
+    this.coordinationManagers.clear();
   }
 
   private _onExited = new vscode.EventEmitter<DebuggeeExited>();
@@ -253,6 +297,12 @@ class DebugAdapterTrackerFactory
               }
             }
           }
+        }
+      },
+      onDidChangeBreakpoints: async (event: vscode.BreakpointsChangeEvent) => {
+        const coordinationManager = this.coordinationManagers.get(session.id);
+        if (coordinationManager && event.added.length + event.removed.length + event.changed.length > 0) {
+          await coordinationManager.onBreakpointsChanged(event.added.concat(event.changed));
         }
       },
     };
