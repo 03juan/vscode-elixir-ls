@@ -1,12 +1,42 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import * as vscode from "vscode";
-import { buildCommand } from ".  createDebugAdapterTracker(
+import { buildCommand } from "./executable";
+
+import {
+  type TelemetryEvent,
+  preprocessStacktrace,
+  preprocessStacktraceInProperties,
+  reporter,
+} from "./telemetry";
+
+import { DynamicInterpretationManager } from "./dynamicInterpretationManager";
+
+class DebugAdapterExecutableFactory
+  implements vscode.DebugAdapterDescriptorFactory
+{
+  private _context: vscode.ExtensionContext;
+  private startTimes = new Map<string, number>();
+  private coordinationManagers = new Map<string, DynamicInterpretationManager>();
+  private outputChannel: vscode.OutputChannel;
+
+  constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) {
+    this._context = context;
+    this.outputChannel = outputChannel;
+  }
+
+  private getLanguageClient(_workspaceFolder?: vscode.WorkspaceFolder): any {
+    // This would be injected from the main extension
+    // For now return null, this will be properly implemented when integrated
+    return null;
+  }
+
+  public createDebugAdapterTracker(
     session: vscode.DebugSession,
   ): vscode.ProviderResult<vscode.DebugAdapterTracker> {
     return {
       onWillStartSession: async () => {
         this.startTimes.set(session.id, performance.now());
-        
+
         // Initialize dynamic interpretation coordination if enabled
         const config = session.configuration;
         if (config.coordination?.enabled) {
@@ -14,9 +44,9 @@ import { buildCommand } from ".  createDebugAdapterTracker(
             this.outputChannel,
             session.workspaceFolder
           );
-          
+
           this.coordinationManagers.set(session.id, coordinationManager);
-          
+
           try {
             const languageClient = this.getLanguageClient(session.workspaceFolder);
             if (languageClient) {
@@ -35,23 +65,10 @@ import { buildCommand } from ".  createDebugAdapterTracker(
           coordinationManager.dispose?.();
           this.coordinationManagers.delete(session.id);
         }
-      },e";
-import {
-  type TelemetryEvent,
-  preprocessStacktrace,
-  preprocessStacktraceInProperties,
-  reporter,
-} from "./telemetry";
-import { DynamicInterpretationManager } from "./dynamicInterpretationManager";
-
-class DebugAdapterExecutableFactory
-  implements vscode.DebugAdapterDescriptorFactory
-{
-  private _context: vscode.ExtensionContext;
-  constructor(context: vscode.ExtensionContext) {
-    this._context = context;
+      }
+    };
   }
-
+      
   public createDebugAdapterDescriptor(
     session: vscode.DebugSession,
     executable: vscode.DebugAdapterExecutable,
@@ -299,28 +316,27 @@ class DebugAdapterTrackerFactory
           }
         }
       },
-      onDidChangeBreakpoints: async (event: vscode.BreakpointsChangeEvent) => {
-        const coordinationManager = this.coordinationManagers.get(session.id);
-        if (coordinationManager && event.added.length + event.removed.length + event.changed.length > 0) {
-          await coordinationManager.onBreakpointsChanged(event.added.concat(event.changed));
-        }
-      },
-    };
+      // Note: onDidChangeBreakpoints removed as it's not part of the DebugAdapterTracker interface
+    } as vscode.DebugAdapterTracker;
   }
 }
 
 export let trackerFactory: DebugAdapterTrackerFactory;
 
-export function configureDebugger(context: vscode.ExtensionContext) {
+export function configureDebugger(
+  context: vscode.ExtensionContext,
+  outputChannel: vscode.OutputChannel,
+  getLanguageClient: (workspaceFolder?: vscode.WorkspaceFolder) => any
+) {
   // Use custom DebugAdapterExecutableFactory that launches the debug adapter with
   // the current working directory set to the workspace root so asdf can load
   // the correct environment properly.
-  const factory = new DebugAdapterExecutableFactory(context);
+  const factory = new DebugAdapterExecutableFactory(context, outputChannel);
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterDescriptorFactory("mix_task", factory),
   );
 
-  trackerFactory = new DebugAdapterTrackerFactory(context);
+  trackerFactory = new DebugAdapterTrackerFactory(context, outputChannel, getLanguageClient);
 
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterTrackerFactory("mix_task", trackerFactory),

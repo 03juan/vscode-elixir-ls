@@ -19,6 +19,7 @@ import {
 } from "./testController";
 import { testElixir } from "./testElixir";
 import { TypeInfoTool } from "./type-info-tool";
+import { E2ETestController } from "./e2eTestController";
 
 console.log("ElixirLS: Loading extension");
 
@@ -70,10 +71,21 @@ export function activate(context: vscode.ExtensionContext): ElixirLS {
 
   detectConflictingExtensions();
 
+  // Create IDE Coordinator output channel for debugging
+  const ideCoordinatorOutputChannel = vscode.window.createOutputChannel('IDE Coordinator');
+
   configureCommands(context, languageClientManager);
-  configureDebugger(context);
+  configureDebugger(context, ideCoordinatorOutputChannel, (workspaceFolder) => 
+    workspaceFolder ? 
+      languageClientManager.getClientByUri(workspaceFolder.uri) : 
+      languageClientManager.getDefaultClient());
   configureTerminalLinkProvider(context);
   configureTestController(context, languageClientManager, workspaceTracker);
+
+  // Initialize E2E Test Controller for IDE Coordinator testing
+  const e2eTestController = new E2ETestController();
+  e2eTestController.registerCommands(context);
+  context.subscriptions.push(e2eTestController);
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((value) => {

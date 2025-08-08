@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "name": "Mock Phoenix App",
+      "path": "../src/test-fixtures/large_phoenix_app"
+    }
+  ],
+  "settings": {
+    "elixirLS.dialyzerEnabled": false,
+    "elixirLS.suggestSpecs": false,
+    "elixirLS.fetchDeps": false,
+    "elixirLS.coordination.enabled": true,
+    "elixirLS.coordination.strategy": "demand-driven",
+    "elixirLS.coordination.e2eTestMode": true
+  },
+  "extensions": {
+    "recommendations": [
+      "JakeBecker.elixir-ls"
+    ]
+  }
+}

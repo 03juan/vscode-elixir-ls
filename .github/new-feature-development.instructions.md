@@ -4,7 +4,7 @@ description: "Technical specification and implementation guide for adding increm
 feature: "debugger-dynamic-interpretation"
 status: "in-development"
 version: "1.0"
-applyTo: "elixir-ls/apps/debug_adapter/**/*.ex,elixir-ls/apps/language_server/**/*.ex,src/**/*.ts"
+applyTo: "elixir-ls/**/*.ex,src/**/*.ts"
 keywords: ["debugging", "code-reload", "incremental", "DAP", "ElixirLS", "module-interpretation"]
 ---
 

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
+import { E2EPerformanceMonitor, PerformanceMetrics } from './e2ePerformanceMonitor';
 
 export interface DependencyAnalysisRequest {
   module: string;
@@ -30,7 +31,7 @@ export interface InterpretationRequest {
   modules: string[];
   strategy: 'immediate' | 'queued' | 'background';
   context: {
-    reason: 'breakpoint' | 'reload' | 'expansion';
+    reason: 'breakpoint' | 'reload' | 'expansion' | 'prediction';
     source: string;
     priority?: number;
   };
@@ -53,8 +54,10 @@ export class DynamicInterpretationManager {
   private debugAdapter: any; // TODO: Type this properly
   private interpretedModules: Set<string> = new Set();
   private interpretationPatterns: string[] = [];
-  private currentStrategy: CoordinationStrategy;
+  private currentStrategy: CoordinationStrategy | null;
   private coordinationEnabled: boolean = false;
+  private e2eMonitor: E2EPerformanceMonitor;
+  private sessionId: string = '';
 
   constructor(
     private outputChannel: vscode.OutputChannel,
@@ -62,6 +65,8 @@ export class DynamicInterpretationManager {
   ) {
     // Default to demand-driven strategy
     this.currentStrategy = new DemandDrivenCoordinator(this);
+    // Initialize E2E performance monitor
+    this.e2eMonitor = new E2EPerformanceMonitor(outputChannel, workspaceFolder);
   }
 
   /**
@@ -75,7 +80,13 @@ export class DynamicInterpretationManager {
     this.languageClient = languageClient;
     this.debugAdapter = debugAdapter;
     this.coordinationEnabled = config.coordination?.enabled ?? false;
-    this.interpretationPatterns = config.coordination?.interpretationPatterns ?? [];
+    
+    // Set interpretation patterns from config
+    this.interpretationPatterns = config.coordination?.interpretationPatterns ?? ['*'];
+    this.outputChannel.appendLine(`Interpretation patterns: ${this.interpretationPatterns.join(', ')}`);
+    
+    // Generate session ID
+    this.sessionId = debugAdapter.id || Math.random().toString(36).substr(2, 9);
 
     if (this.coordinationEnabled) {
       this.outputChannel.appendLine('Dynamic interpretation coordination enabled');
@@ -86,9 +97,118 @@ export class DynamicInterpretationManager {
 
       // Enable coordination mode in debug adapter
       await this.enableDebugAdapterCoordination();
+
+      // Start E2E monitoring if configured
+      const e2eTestScenario = config.coordination?.e2eTestScenario;
+      if (e2eTestScenario) {
+        await this.startE2ETest(e2eTestScenario);
+      }
     } else {
       this.outputChannel.appendLine('Dynamic interpretation coordination disabled');
     }
+  }
+
+  /**
+   * Start E2E performance test scenario
+   */
+  async startE2ETest(scenarioName: string): Promise<void> {
+    try {
+      await this.e2eMonitor.startE2ETest(scenarioName, this.sessionId);
+      this.outputChannel.appendLine(`🧪 E2E test started: ${scenarioName}`);
+    } catch (error) {
+      this.outputChannel.appendLine(`Failed to start E2E test: ${error}`);
+    }
+  }
+
+  /**
+   * Record performance metric from debug adapter
+   */
+  recordPerformanceMetric(operation: string, module: string | undefined, duration: number, metadata: Record<string, any> = {}): void {
+    const metric: PerformanceMetrics = {
+      operation,
+      module,
+      timing: {
+        startTime: performance.now() - duration,
+        endTime: performance.now(),
+        duration
+      },
+      metadata,
+      context: {
+        sessionId: this.sessionId,
+        strategy: this.currentStrategy?.name || 'none',
+        moduleCount: metadata.moduleCount
+      }
+    };
+
+    this.e2eMonitor.recordMetric(metric);
+  }
+
+  /**
+   * Take performance snapshot
+   */
+  async takePerformanceSnapshot(label: string): Promise<void> {
+    await this.e2eMonitor.takePerformanceSnapshot(label);
+  }
+
+  /**
+   * Complete E2E test and get report
+   */
+  async completeE2ETest(): Promise<any> {
+    try {
+      const report = await this.e2eMonitor.completeE2ETest(this.sessionId);
+      this.outputChannel.appendLine(`📊 E2E test completed with result: ${report.summary}`);
+      return report;
+    } catch (error) {
+      this.outputChannel.appendLine(`Failed to complete E2E test: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Export performance data
+   */
+  exportPerformanceData(): any {
+    return {
+      metrics: this.e2eMonitor ? this.e2eMonitor.getMetrics() : [],
+      snapshots: this.e2eMonitor ? this.e2eMonitor.getSnapshots() : [],
+      summary: {
+        coordinationEnabled: this.coordinationEnabled,
+        currentStrategy: this.currentStrategy?.name || 'none',
+        sessionId: this.sessionId
+      }
+    };
+  }
+
+  /**
+   * Check if coordination is enabled
+   */
+  isCoordinationEnabled(): boolean {
+    return this.coordinationEnabled;
+  }
+
+  /**
+   * Get current coordination strategy
+   */
+  getCurrentStrategy(): CoordinationStrategy | null {
+    return this.currentStrategy;
+  }
+
+  /**
+   * Get E2E monitor instance for external access
+   */
+  getE2EMonitor(): E2EPerformanceMonitor {
+    return this.e2eMonitor;
+  }
+
+  dispose(): void {
+    // Clean up resources - delegate to performance monitor reset
+    if (this.e2eMonitor) {
+      this.e2eMonitor.reset();
+    }
+    this.currentStrategy = null as any; // Allow null assignment
+    this.coordinationEnabled = false;
+    
+    this.outputChannel.appendLine('Dynamic interpretation manager disposed');
   }
 
   /**
@@ -99,10 +219,21 @@ export class DynamicInterpretationManager {
       return;
     }
 
+    const startTime = performance.now();
     try {
       await this.currentStrategy.onBreakpointsChanged(breakpoints);
+      const duration = performance.now() - startTime;
+      this.recordPerformanceMetric('coordination', undefined, duration, { 
+        breakpointCount: breakpoints.length,
+        strategy: this.currentStrategy.name 
+      });
     } catch (error) {
       this.outputChannel.appendLine(`Error in breakpoint coordination: ${error}`);
+      const duration = performance.now() - startTime;
+      this.recordPerformanceMetric('coordination_error', undefined, duration, { 
+        error: error instanceof Error ? error.toString() : String(error),
+        breakpointCount: breakpoints.length 
+      });
     }
   }
 
@@ -127,6 +258,7 @@ export class DynamicInterpretationManager {
 
     this.outputChannel.appendLine(`Requesting dependency analysis for ${module} (scope: ${request.scope})`);
 
+    const startTime = performance.now();
     try {
       const response = await this.languageClient.sendRequest('workspace/executeCommand', {
         command: `debugDependencyAnalysis:${this.getServerInstanceId()}`,
@@ -137,6 +269,13 @@ export class DynamicInterpretationManager {
         throw new Error(`Dependency analysis failed: ${(response as any).error}`);
       }
 
+      const duration = performance.now() - startTime;
+      this.recordPerformanceMetric('dependency_analysis', module, duration, {
+        scope: request.scope,
+        moduleCount: response.interpretationScope.length,
+        complexity: response.metadata.complexityAssessment
+      });
+
       this.outputChannel.appendLine(
         `Analysis complete: ${response.interpretationScope.length} modules, ` +
         `complexity: ${response.metadata.complexityAssessment}, ` +
@@ -145,6 +284,11 @@ export class DynamicInterpretationManager {
 
       return response;
     } catch (error) {
+      const duration = performance.now() - startTime;
+      this.recordPerformanceMetric('dependency_analysis_error', module, duration, {
+        error: error instanceof Error ? error.toString() : String(error),
+        scope: request.scope
+      });
       this.outputChannel.appendLine(`Dependency analysis request failed: ${error}`);
       throw error;
     }
@@ -162,6 +306,7 @@ export class DynamicInterpretationManager {
       `Executing interpretation: ${request.modules.length} modules, strategy: ${request.strategy}`
     );
 
+    const startTime = performance.now();
     try {
       const response = await this.debugAdapter.sendRequest('coordinatedInterpret', {
         modules: request.modules,
@@ -176,6 +321,15 @@ export class DynamicInterpretationManager {
         });
       }
 
+      const duration = performance.now() - startTime;
+      this.recordPerformanceMetric('interpretation', undefined, duration, {
+        moduleCount: request.modules.length,
+        strategy: request.strategy,
+        successCount: response.interpreted?.length || 0,
+        failureCount: response.failed?.length || 0,
+        totalTime: response.totalTime
+      });
+
       this.outputChannel.appendLine(
         `Interpretation result: ${response.interpreted?.length || 0} successful, ` +
         `${response.failed?.length || 0} failed, ${response.totalTime}ms`
@@ -183,6 +337,12 @@ export class DynamicInterpretationManager {
 
       return response;
     } catch (error) {
+      const duration = performance.now() - startTime;
+      this.recordPerformanceMetric('interpretation_error', undefined, duration, {
+        moduleCount: request.modules.length,
+        strategy: request.strategy,
+        error: error instanceof Error ? error.toString() : String(error)
+      });
       this.outputChannel.appendLine(`Interpretation request failed: ${error}`);
       throw error;
     }
@@ -287,7 +447,7 @@ export class DynamicInterpretationManager {
       interpretedCount: this.interpretedModules.size,
       interpretedModules: Array.from(this.interpretedModules),
       coordinationEnabled: this.coordinationEnabled,
-      currentStrategy: this.currentStrategy.name
+      currentStrategy: this.currentStrategy?.name || 'none'
     };
   }
 

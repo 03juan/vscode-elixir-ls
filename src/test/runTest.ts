@@ -10,6 +10,18 @@ async function main(): Promise<void> {
 
     const disableGpu = process.env.DISABLE_GPU === "1" ? ["--disable-gpu"] : [];
 
+    // E2E Coordination Tests - NEW: Test our IDE Coordinator functionality
+    console.log('Running E2E Coordination Tests...');
+    await runTests({
+      extensionDevelopmentPath,
+      extensionTestsPath: path.resolve(__dirname, "./e2e-coordination"),
+      launchArgs: [
+        ...disableGpu,
+        '--disable-extensions', // Clean test environment
+        path.resolve(__dirname, "../../src/test-fixtures/large_phoenix_app"),
+      ],
+    });
+
     // single elixir file no workspace
     await runTests({
       extensionDevelopmentPath,

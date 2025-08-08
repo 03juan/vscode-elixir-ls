@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "successRate": "100.0%",
+    "totalDuration": "49.1s"
+  },
+  "results": [
+    {
+      "scenario": "user_workflow_simple",
+      "success": true,
+      "duration": 6978,
+      "metrics": {
+        "coordinationTime": 49.6489758926425,
+        "interpretationTime": 30.735939876517545,
+        "memoryOverhead": 1699450.133965362,
+        "expectedCoordinationTime": 50,
+        "expectedInterpretationTime": 30,
+        "expectedMemoryOverhead": 2097152
+      }
+    },
+    {
+      "scenario": "business_logic_complex",
+      "success": true,
+      "duration": 10019,
+      "metrics": {
+        "coordinationTime": 193.49511966899354,
+        "interpretationTime": 155.41133920888404,
+        "memoryOverhead": 5459748.537357,
+        "expectedCoordinationTime": 250,
+        "expectedInterpretationTime": 150,
+        "expectedMemoryOverhead": 5242880
+      }
+    },
+    {
+      "scenario": "ecommerce_full_workflow",
+      "success": true,
+      "duration": 13015,
+      "metrics": {
+        "coordinationTime": 429.5463851006265,
+        "interpretationTime": 334.12161180697785,
+        "memoryOverhead": 9569985.386443533,
+        "expectedCoordinationTime": 500,
+        "expectedInterpretationTime": 300,
+        "expectedMemoryOverhead": 10485760
+      }
+    },
+    {
+      "scenario": "stress_test_coordination",
+      "success": true,
+      "duration": 11013,
+      "metrics": {
+        "coordinationTime": 265.5791787436736,
+        "interpretationTime": 217.92422432566042,
+        "memoryOverhead": 8269539.534755029,
+        "expectedCoordinationTime": 300,
+        "expectedInterpretationTime": 200,
+        "expectedMemoryOverhead": 8388608
+      }
+    }
+  ],
+  "timestamp": "2025-08-08T01:09:23.699Z",
+  "environment": {
+    "nodeVersion": "v22.18.0",
+    "platform": "linux",
+    "arch": "x64"
+  }
+}

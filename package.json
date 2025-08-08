@@ -25,7 +25,12 @@
     "Testing",
     "Formatters"
   ],
-  "keywords": ["elixir", "mix", "dialyzer", "multi-root ready"],
+  "keywords": [
+    "elixir",
+    "mix",
+    "dialyzer",
+    "multi-root ready"
+  ],
   "activationEvents": [
     "onLanguage:phoenix-heex",
     "onLanguage:surface",
@@ -124,7 +129,11 @@
           "scope": "resource",
           "description": "Formatter to use for Dialyzer warnings",
           "type": "string",
-          "enum": ["dialyzer", "dialyxir_short", "dialyxir_long"],
+          "enum": [
+            "dialyzer",
+            "dialyxir_short",
+            "dialyxir_long"
+          ],
           "markdownEnumDescriptions": [
             "Original Dialyzer format",
             "Same as `mix dialyzer --format short`",
@@ -186,7 +195,11 @@
         "elixirLS.trace.server": {
           "scope": "window",
           "type": "string",
-          "enum": ["off", "messages", "verbose"],
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
           "default": "off",
           "description": "Traces the communication between VS Code and the Elixir language server."
         },
@@ -247,21 +260,42 @@
     "languages": [
       {
         "id": "elixir",
-        "aliases": ["Elixir", "elixir"],
-        "extensions": [".ex", ".exs"],
-        "filenames": ["mix.lock"],
+        "aliases": [
+          "Elixir",
+          "elixir"
+        ],
+        "extensions": [
+          ".ex",
+          ".exs"
+        ],
+        "filenames": [
+          "mix.lock"
+        ],
         "configuration": "./elixir-language-configuration.json"
       },
       {
         "id": "eex",
-        "aliases": ["Embedded Elixir", "EEx", "eex"],
-        "extensions": [".eex", ".leex"],
+        "aliases": [
+          "Embedded Elixir",
+          "EEx",
+          "eex"
+        ],
+        "extensions": [
+          ".eex",
+          ".leex"
+        ],
         "configuration": "./eex-language-configuration.json"
       },
       {
         "id": "html-eex",
-        "aliases": ["HTML (Embedded Elixir)", "HTML (EEx)"],
-        "extensions": [".html.eex", ".html.leex"],
+        "aliases": [
+          "HTML (Embedded Elixir)",
+          "HTML (EEx)"
+        ],
+        "extensions": [
+          ".html.eex",
+          ".html.leex"
+        ],
         "configuration": "./eex-language-configuration.json"
       }
     ],
@@ -311,10 +345,14 @@
         "osx": {
           "program": "debug_adapter.sh"
         },
-        "languages": ["elixir"],
+        "languages": [
+          "elixir"
+        ],
         "configurationAttributes": {
           "launch": {
-            "required": ["projectDir"],
+            "required": [
+              "projectDir"
+            ],
             "properties": {
               "task": {
                 "type": "string",
@@ -375,7 +413,11 @@
               "stackTraceMode": {
                 "type": "string",
                 "description": "Option passed to :int.stack_trace/1. See https://www.erlang.org/doc/man/int#stack_trace-1 for details",
-                "enum": ["all", "no_tail", "false"],
+                "enum": [
+                  "all",
+                  "no_tail",
+                  "false"
+                ],
                 "default": "no_tail"
               },
               "exitAfterTaskReturns": {
@@ -391,7 +433,10 @@
             }
           },
           "attach": {
-            "required": ["projectDir", "remoteNode"],
+            "required": [
+              "projectDir",
+              "remoteNode"
+            ],
             "properties": {
               "remoteNode": {
                 "type": "string",
@@ -431,7 +476,11 @@
               "stackTraceMode": {
                 "type": "string",
                 "description": "Option passed to :int.stack_trace/1. See https://www.erlang.org/doc/man/int#stack_trace-1 for details",
-                "enum": ["all", "no_tail", "false"],
+                "enum": [
+                  "all",
+                  "no_tail",
+                  "false"
+                ],
                 "default": "no_tail"
               }
             }
@@ -449,10 +498,15 @@
             "name": "mix test",
             "request": "launch",
             "task": "test",
-            "taskArgs": ["--trace"],
+            "taskArgs": [
+              "--trace"
+            ],
             "startApps": true,
             "projectDir": "${workspaceRoot}",
-            "requireFiles": ["test/**/test_helper.exs", "test/**/*_test.exs"]
+            "requireFiles": [
+              "test/**/test_helper.exs",
+              "test/**/*_test.exs"
+            ]
           }
         ],
         "configurationSnippets": [
@@ -475,7 +529,10 @@
       {
         "name": "mixCompileError",
         "owner": "elixir",
-        "fileLocation": ["relative", "${workspaceRoot}"],
+        "fileLocation": [
+          "relative",
+          "${workspaceRoot}"
+        ],
         "severity": "error",
         "pattern": {
           "regexp": "^\\*\\* \\((\\w+)\\) (.*):(\\d+): (.*)$",
@@ -487,7 +544,10 @@
       {
         "name": "mixCompileWarning",
         "owner": "elixir",
-        "fileLocation": ["relative", "${workspaceRoot}"],
+        "fileLocation": [
+          "relative",
+          "${workspaceRoot}"
+        ],
         "severity": "warning",
         "pattern": [
           {
@@ -505,7 +565,10 @@
       {
         "name": "mixTestFailure",
         "owner": "elixir",
-        "fileLocation": ["relative", "${workspaceRoot}"],
+        "fileLocation": [
+          "relative",
+          "${workspaceRoot}"
+        ],
         "severity": "warning",
         "pattern": [
           {
@@ -555,6 +618,31 @@
         "category": "Elixir",
         "command": "extension.fromPipe",
         "title": "Transform pipe operator to function call"
+      },
+      {
+        "category": "ElixirLS E2E",
+        "command": "elixirLS.runE2ETest",
+        "title": "Run E2E Performance Test"
+      },
+      {
+        "category": "ElixirLS E2E",
+        "command": "elixirLS.runAllE2ETests",
+        "title": "Run All E2E Performance Tests"
+      },
+      {
+        "category": "ElixirLS E2E",
+        "command": "elixirLS.showE2EReport",
+        "title": "Show E2E Test Report"
+      },
+      {
+        "category": "ElixirLS E2E",
+        "command": "elixirLS.exportE2EData",
+        "title": "Export E2E Performance Data"
+      },
+      {
+        "category": "ElixirLS E2E",
+        "command": "elixirLS.resetE2EMonitoring",
+        "title": "Reset E2E Monitoring"
       }
     ],
     "menus": {
@@ -593,13 +681,40 @@
           "category": "Elixir",
           "command": "extension.fromPipe",
           "when": "editorLangId == elixir || editorLangId == eex || editorLangId == html-eex"
+        },
+        {
+          "category": "ElixirLS E2E",
+          "command": "elixirLS.runE2ETest",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "category": "ElixirLS E2E",
+          "command": "elixirLS.runAllE2ETests",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "category": "ElixirLS E2E",
+          "command": "elixirLS.showE2EReport",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "category": "ElixirLS E2E",
+          "command": "elixirLS.exportE2EData",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "category": "ElixirLS E2E",
+          "command": "elixirLS.resetE2EMonitoring",
+          "when": "workspaceFolderCount > 0"
         }
       ]
     },
     "taskDefinitions": [
       {
         "type": "mix",
-        "required": ["task"],
+        "required": [
+          "task"
+        ],
         "properties": {
           "task": {
             "type": "string",
@@ -617,7 +732,9 @@
         "toolReferenceName": "elixir-definition",
         "inputSchema": {
           "type": "object",
-          "required": ["symbol"],
+          "required": [
+            "symbol"
+          ],
           "properties": {
             "symbol": {
               "type": "string",
@@ -634,7 +751,9 @@
         "toolReferenceName": "elixir-environment",
         "inputSchema": {
           "type": "object",
-          "required": ["location"],
+          "required": [
+            "location"
+          ],
           "properties": {
             "location": {
               "type": "string",
@@ -651,7 +770,9 @@
         "toolReferenceName": "elixir-module-dependencies",
         "inputSchema": {
           "type": "object",
-          "required": ["module"],
+          "required": [
+            "module"
+          ],
           "properties": {
             "module": {
               "type": "string",
@@ -668,7 +789,9 @@
         "toolReferenceName": "elixir-docs",
         "inputSchema": {
           "type": "object",
-          "required": ["modules"],
+          "required": [
+            "modules"
+          ],
           "properties": {
             "modules": {
               "type": "array",
@@ -688,7 +811,9 @@
         "toolReferenceName": "elixir-implementation-finder",
         "inputSchema": {
           "type": "object",
-          "required": ["symbol"],
+          "required": [
+            "symbol"
+          ],
           "properties": {
             "symbol": {
               "type": "string",
@@ -705,7 +830,9 @@
         "toolReferenceName": "elixir-types",
         "inputSchema": {
           "type": "object",
-          "required": ["module"],
+          "required": [
+            "module"
+          ],
           "properties": {
             "module": {
               "type": "string",
@@ -732,7 +859,14 @@
     "esbuild-release": "npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "e2e:test": "node scripts/e2e-test-automation.js",
+    "e2e:test:simple": "node scripts/e2e-test-automation.js --scenario=user_workflow_simple",
+    "e2e:test:complex": "node scripts/e2e-test-automation.js --scenario=business_logic_complex",
+    "e2e:test:full": "node scripts/e2e-test-automation.js --scenario=ecommerce_full_workflow",
+    "e2e:test:stress": "node scripts/e2e-test-automation.js --scenario=stress_test_coordination",
+    "e2e:test:watch": "node scripts/e2e-test-automation.js --watch",
+    "e2e:test:export": "node scripts/e2e-test-automation.js --export=test-results/e2e-report.json"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -740,6 +874,7 @@
     "@types/node": "^20.17.50",
     "@types/vscode": "~1.95.0",
     "@vscode/debugprotocol": "^1.68.0",
+    "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.25.8",
     "glob": "^11.0.3",
